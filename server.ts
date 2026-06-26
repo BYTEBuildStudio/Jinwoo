@@ -19,7 +19,14 @@ function getGemini(): GoogleGenAI {
     if (!key || key === "MY_GEMINI_API_KEY") {
       throw new Error("GEMINI_API_KEY environment variable is required and must be configured in AI Studio Secrets.");
     }
-    aiClient = new GoogleGenAI({ apiKey: key });
+    aiClient = new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
   }
   return aiClient;
 }
@@ -91,7 +98,7 @@ Missions: ${JSON.stringify(todayMissions || [])}
     });
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: formattedHistory,
       config: {
         systemInstruction: JINWOO_SYSTEM_PROMPT,

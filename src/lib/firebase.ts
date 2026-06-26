@@ -136,7 +136,7 @@ export function loginAnonymously(onUserReady: (user: any, profile: any) => void)
         const profile = await ensureUserProfileExists(user);
         onUserReady(user, profile);
       } catch (error) {
-        console.error("Error setting up user profile in firestore, loading local profile fallback:", error);
+        console.warn("Error setting up user profile in firestore, loading local profile fallback:", error);
         const fallbackProfile = getLocalProfile(user.uid);
         onUserReady(user, fallbackProfile);
       }
@@ -167,7 +167,7 @@ export function loginAnonymously(onUserReady: (user: any, profile: any) => void)
           console.log("Logged in with background system user successfully!");
         }
       } catch (subError: any) {
-        console.error("All Firebase auth options are restricted or disabled in console. Activating local companion mode:", subError);
+        console.info("All Firebase auth options are restricted or disabled in console. Activating local companion mode:", subError);
         
         // Return simulated user and profile
         const mockUser = {

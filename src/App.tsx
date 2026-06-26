@@ -33,6 +33,11 @@ import {
   JournalEntry 
 } from "./types";
 import Avatar from "./components/Avatar";
+import QuestCenter from "./components/QuestCenter";
+import PhysicalNutrition from "./components/PhysicalNutrition";
+import StudyCoding from "./components/StudyCoding";
+import FinanceHub from "./components/FinanceHub";
+import MonarchGate from "./components/MonarchGate";
 import { 
   Flame, 
   Calendar as CalendarIcon, 
@@ -62,7 +67,10 @@ import {
   Compass,
   Settings as SettingsIcon,
   HelpCircle,
-  Clock
+  Clock,
+  Trophy,
+  Zap,
+  Wallet
 } from "lucide-react";
 
 // Speech synthesis and recognition setup
@@ -108,7 +116,7 @@ export default function App() {
   const [nightSummary, setNightSummary] = useState<any>(null);
 
   // Active Menu Page State
-  const [activePage, setActivePage] = useState<"Dashboard" | "AI Assistant" | "Daily Tasks" | "Skills" | "Physical Progress" | "Journal" | "Statistics" | "Focus Mode" | "Settings">("Dashboard");
+  const [activePage, setActivePage] = useState<string>("Dashboard");
 
   // Custom Modal States
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
@@ -302,6 +310,79 @@ export default function App() {
     recognition.onend = () => {
       setIsListening(false);
     };
+  };
+
+  // Centralized XP Gain and level calculations
+  const handleGainXP = async (amount: number, message: string) => {
+    if (!user || !profile) return;
+    let newXp = (profile.xp || 0) + amount;
+    let newLevel = profile.level || 1;
+    const xpNeeded = 1000;
+    
+    if (newXp >= xpNeeded) {
+      newLevel += Math.floor(newXp / xpNeeded);
+      newXp = newXp % xpNeeded;
+      setShowLevelUp(true);
+      setCompanionExpression("excited");
+      setCompanionGesture("saluting");
+    }
+
+    const updatedProfile = {
+      ...profile,
+      xp: newXp,
+      level: newLevel,
+      updatedAt: new Date().toISOString()
+    };
+    setProfile(updatedProfile);
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        xp: newXp,
+        level: newLevel,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn("Firestore update profile failed, fallback to local:", err);
+    }
+    localStorage.setItem(`profile_${user.uid}`, JSON.stringify(updatedProfile));
+
+    setXpAnimation({ visible: true, text: `+${amount} XP: ${message}` });
+    setTimeout(() => setXpAnimation(null), 3500);
+  };
+
+  const handleUnlockMonarch = async () => {
+    if (!user || !profile) return;
+    const newLevel = 1200;
+    const newRank = "Shadow Monarch";
+    
+    const updatedProfile = {
+      ...profile,
+      level: newLevel,
+      rank: newRank,
+      updatedAt: new Date().toISOString()
+    };
+    setProfile(updatedProfile);
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        level: newLevel,
+        rank: newRank,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn("Firestore save failed, fallback to local:", err);
+    }
+    localStorage.setItem(`profile_${user.uid}`, JSON.stringify(updatedProfile));
+
+    setCompanionText("Arise, Shadow Monarch. The absolute Peak Sovereign interface is fully active.");
+    setCompanionExpression("excited");
+    setCompanionGesture("saluting");
+    triggerSpeech("Arise. Welcome to Monarch Status, Sovereign.");
+    
+    setXpAnimation({ visible: true, text: "SOVEREIGN AWAKENED! LEVEL 1200 REACHED" });
+    setTimeout(() => setXpAnimation(null), 5000);
   };
 
   // Startup Walkthrough Trigger
@@ -584,7 +665,7 @@ export default function App() {
       triggerSpeech(data.response);
 
     } catch (err) {
-      console.error(err);
+      console.warn(err);
       const fallbackMsg = "Link interface unstable. Re-routing guide matrix. What is your command, Hunter?";
       setCompanionText(fallbackMsg);
       triggerSpeech(fallbackMsg);
@@ -806,12 +887,23 @@ export default function App() {
   const completionPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const isAllMandatoryCompleted = tasks.length > 0 && tasks.filter(t => !t.completed).length === 0;
 
+  const isShadowMonarch = profile?.rank === "Shadow Monarch" || (profile?.level || 1) >= 1200;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col selection:bg-blue-600 selection:text-white">
+    <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col ${isShadowMonarch ? "selection:bg-purple-600" : "selection:bg-blue-600"} selection:text-white`}>
       {/* BACKGROUND FLOATING EFFECTS */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-950/15 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-indigo-950/20 rounded-full blur-[150px]" />
+        {isShadowMonarch ? (
+          <>
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-purple-950/25 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-violet-950/30 rounded-full blur-[150px] animate-pulse" />
+          </>
+        ) : (
+          <>
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-950/15 rounded-full blur-[120px]" />
+            <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-indigo-950/20 rounded-full blur-[150px]" />
+          </>
+        )}
       </div>
 
       {loading ? (
@@ -912,7 +1004,7 @@ export default function App() {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white tracking-wider font-sans uppercase">Jinwoo</h2>
-                  <p className="text-[9px] font-mono text-blue-400 tracking-widest uppercase">E-Rank Hunter</p>
+                  <p className="text-[9px] font-mono text-blue-400 tracking-widest uppercase">{profile?.rank || "E-Rank Hunter"}</p>
                 </div>
               </div>
             </div>
@@ -921,11 +1013,16 @@ export default function App() {
             <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
               {[
                 { name: "Dashboard", icon: Activity },
+                { name: "Quests & Streaks", icon: Trophy },
+                { name: "Physical & Nutrition", icon: Dumbbell },
+                { name: "Study & Coding", icon: Code },
+                { name: "Finance Hub", icon: Wallet },
                 { name: "AI Assistant", icon: MessageSquare },
                 { name: "Daily Tasks", icon: BookMarked },
                 { name: "Skills", icon: Award },
-                { name: "Physical Progress", icon: Dumbbell },
+                { name: "Physical Progress", icon: Compass },
                 { name: "Journal", icon: BookOpen },
+                { name: "Monarch Gate", icon: Zap },
                 { name: "Settings", icon: SettingsIcon }
               ].map((item) => {
                 const Icon = item.icon;
@@ -1379,6 +1476,27 @@ export default function App() {
                   </div>
 
                 </div>
+              )}
+
+              {/* NEW ADAPTIVE MODULES MOUNT REGISTRY */}
+              {activePage === "Quests & Streaks" && (
+                <QuestCenter onGainXP={handleGainXP} skills={profile?.skills} />
+              )}
+
+              {activePage === "Physical & Nutrition" && (
+                <PhysicalNutrition onGainXP={handleGainXP} />
+              )}
+
+              {activePage === "Study & Coding" && (
+                <StudyCoding onGainXP={handleGainXP} />
+              )}
+
+              {activePage === "Finance Hub" && (
+                <FinanceHub onGainXP={handleGainXP} />
+              )}
+
+              {activePage === "Monarch Gate" && (
+                <MonarchGate level={profile?.level || 1} rank={profile?.rank || "E-Rank"} onUnlockMonarch={handleUnlockMonarch} />
               )}
 
               {/* VIEW 2: AI ASSISTANT EXPANDED PAGE */}
