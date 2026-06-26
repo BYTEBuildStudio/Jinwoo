@@ -1,0 +1,6 @@
+{
+  "name": "Project Jinwoo Companion",
+  "description": "A futuristic anime-inspired hunter guide companion and system dashboard featuring dynamic AI voice synthesis, interactive avatar animation, quest management, and automated daily leveling.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
